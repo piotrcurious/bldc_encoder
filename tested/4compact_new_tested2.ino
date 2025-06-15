@@ -74,11 +74,9 @@ float unwrapped_electrical_angle = 0.0f; // This is the continuous, unbounded an
 long revolution_count = 0;
 long estimated_mechanical_steps = 0;
 
-
-bool ekfLocked = false; // EKF lock now indicates confidence, not gates unwrapping
+bool ekfLocked = false; // EKF lock indicates confidence
 unsigned long lastNonZeroVelMicros = 0, prev_ekf_micros = 0;
 
-// New tracking variables (mostly for EKF diagnostics and smoothed velocity)
 float smoothed_velocity = 0.0f;
 float velocity_trend = 0.0f;
 unsigned long last_direction_change = 0;
@@ -96,9 +94,7 @@ float normalizeAngle(float);
 void applyEKF(float);
 void logData();
 int checkedAnalogRead(int);
-void applyMultivariateKalmanFilter(const long readings[3]); // Declaration added for clarity
-
-// New functions for improved tracking
+void applyMultivariateKalmanFilter(const long readings[3]); 
 void updateVelocityHistory(float velocity, unsigned long timestamp);
 void updateAngleHistory(float angle, unsigned long timestamp);
 void updatePhaseHistory(float phaseA, float phaseB, float phaseC, unsigned long timestamp);
@@ -106,25 +102,15 @@ bool checkPhaseConsistency();
 bool isVelocityConsistent();
 bool isRotationStopping();
 
-// **NEW** Function for continuous angle unwrapping
 void updateUnwrappedElectricalAngle(float current_raw_electrical_angle);
 
-// **MODIFIED** Function for dynamic oversampling - now uses velocity
 int getDynamicNumSamples(float current_velocity);
 
-// Kahan Summation Helper Function
-// This function performs one step of the Kahan summation algorithm.
-// It helps to minimize the loss of significance when adding a sequence of
-// finite-precision floating-point numbers, especially when numbers
-// vary greatly in magnitude or when there are many numbers to sum.
-// 'newValue': The current number to add to the sum.
-// 'sum': The running total (modified by this function).
-// 'compensation': The compensation term for tracking lost low-order bits (modified by this function).
 void kahanSum(float newValue, float &sum, float &compensation) {
     float y = newValue - compensation;
     float t = sum + y;
     compensation = (t - sum) - y; // Calculate the error (lost low-order bits)
-    sum = t; // Update the sum
+    sum = t; 
 }
 
 
@@ -148,7 +134,6 @@ void setup() {
     P_kf1.Fill(0.0f);
     for (int i = 0; i < N_STATES_KF1; i++) P_kf1(i, i) = 100.0f;
 
-    // Initialize history arrays
     for (int i = 0; i < Config::VELOCITY_HISTORY_SIZE; i++) {
         velocityHistory[i] = {0.0f, 0.0f, 0UL};
     }
@@ -158,39 +143,6 @@ void setup() {
     for (int i = 0; i < Config::PHASE_HISTORY_SIZE; i++) {
         phaseHistory[i] = {0.0f, 0.0f, 0.0f, 0UL};
     }
-
-    // Perform initial sensing to get a starting angle
-    // For the initial call, we use a default number of samples before dynamic calculation kicks in
-    int initial_num_samples = Config::DEFAULT_NUM_SAMPLES; 
-    long readings_initial[3] = {0};
-    for (int i = 0; i < initial_num_samples; i++) {
-        pinMode(Config::COMMON_PIN, OUTPUT);
-        digitalWrite(Config::COMMON_PIN, LOW);
-        TCNT1 = 0;
-        analogWrite(Config::COMMON_PIN, Config::EXCITATION_PWM_VALUE);
-        delayMicroseconds(Config::EXCITATION_PULSE_WIDTH_US);
-        analogWrite(Config::COMMON_PIN, 0);
-        pinMode(Config::COMMON_PIN, INPUT);
-        delayMicroseconds(Config::FLOATING_SETTLING_TIME_US);
-        readings_initial[0] += checkedAnalogRead(Config::PHASE_A_PIN);
-        readings_initial[1] += checkedAnalogRead(Config::PHASE_B_PIN);
-        readings_initial[2] += checkedAnalogRead(Config::PHASE_C_PIN);
-    }
-    for (int i = 0; i < 3; i++) readings_initial[i] /= initial_num_samples;
-    applyMultivariateKalmanFilter(readings_initial);
-
-    float initial_raw_angle = getInferredElectricalAngle();
-
-    // Initialize the EKF with the first valid angle
-    x_ekf(0) = initial_raw_angle;
-    x_ekf(1) = 0.0f; // Start with zero velocity
-    P_ekf.Fill(0.0f);
-    P_ekf(0, 0) = 1.0f; // Initial angle uncertainty
-    P_ekf(1, 1) = 1.0f; // Initial velocity uncertainty
-    prev_ekf_micros = micros();
-
-    // Initialize the new unwrapped angle tracking system
-    updateUnwrappedElectricalAngle(initial_raw_angle); // This will set first_angle_reading to false
 
     Serial.println(F("Enhanced system ready. Rotate motor to begin estimation."));
 }
