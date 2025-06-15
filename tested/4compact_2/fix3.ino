@@ -22,9 +22,9 @@ namespace Config {
     constexpr float QDK1 = 5.0f, RDK1 = 80.0f; // Q_DIAGONAL_VALUE_KF1, R_DIAGONAL_VALUE_KF1
     constexpr float QAE = 1.1f, QVE = 80.1f, RAE = 1.1f; // Q_ANGLE_EKF, Q_VEL_EKF, R_ANGLE_EKF
     
-    constexpr int VHS = 4; // VELOCITY_HISTORY_SIZE
-    constexpr int AHS = 4; // ANGLE_HISTORY_SIZE
-    constexpr int PHS = 4; // PHASE_HISTORY_SIZE
+    constexpr int VHS = 8; // VELOCITY_HISTORY_SIZE
+    constexpr int AHS = 8; // ANGLE_HISTORY_SIZE
+    constexpr int PHS = 8; // PHASE_HISTORY_SIZE
     constexpr float MVC = 0.0003f; // MIN_VELOCITY_CONSISTENCY
     constexpr float VNT = 0.006f; // VELOCITY_NOISE_THRESHOLD
     constexpr float AHNT = 0.0005f; // ANGLE_HISTORY_NOISE_THRESHOLD
