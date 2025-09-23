@@ -1,18 +1,3 @@
-
-Agents
-
-Dashboard
-
-
-PC
-
-
-Ask Cursor to build, fix bugs, explore
-
-GPT-5, Claude 4.1 Opus, code-supernova, Claude 4 Sonnet, GPT-5 High
-Max
-
-
 #include <BasicLinearAlgebra.h>
 #include <limits.h>
 
